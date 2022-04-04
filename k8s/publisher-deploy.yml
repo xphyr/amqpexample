@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: amqpexample-publish
+  labels:
+    app: amqpexample-publish
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: amqpexample-publish
+  template:
+    metadata:
+      labels:
+        app: amqpexample-publish
+    spec:
+      containers:
+      - name: amqpexample-publish
+        env:
+          - name: AMQP_SERVER
+            valueFrom:
+              secretKeyRef:
+                name: amqpuri
+                key: URI
+        image: quay.io/xphyr/amqpexample:latest
+        imagePullPolicy: Always
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30

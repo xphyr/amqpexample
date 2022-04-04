@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: amqpexample-consumer
+  labels:
+    app: amqpexample-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: amqpexample-consumer
+  template:
+    metadata:
+      labels:
+        app: amqpexample-consumer
+    spec:
+      containers:
+      - name: amqpexample-consumer
+        env:
+          - name: AMQP_SERVER
+            valueFrom:
+              secretKeyRef:
+                name: amqpuri
+                key: URI
+        command: ["/usr/bin/amqpexample"]
+        args: ["-mode", "consumer"]
+        image: quay.io/xphyr/amqpexample:latest
+        imagePullPolicy: Always
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
