@@ -28,9 +28,11 @@ func main() {
 	channel, _ := connection.Channel()
 	defer channel.Close()
 	durable, exclusive := false, false
-	autoDelete, noWait := true, true
+	autoDelete, noWait := false, true
 	q, _ := channel.QueueDeclare("test", durable, autoDelete, exclusive, noWait, nil)
 	channel.QueueBind(q.Name, "#", "amq.topic", false, nil)
+	// set the prefetch to 1, so that we build up a queue
+	channel.Qos(1, 0, false)
 
 	switch *mode {
 	case "publisher":
