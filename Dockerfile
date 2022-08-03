@@ -11,5 +11,4 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o bin/amqpexample
 ##
 FROM docker.io/alpine:latest
 COPY --from=amqpexample_builder /opt/app-root/bin/amqpexample /usr/bin/amqpexample
-EXPOSE 8080
 ENTRYPOINT [ "amqpexample" ]

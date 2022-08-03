@@ -24,7 +24,7 @@ spec:
                 key: URI
         command: ["/usr/bin/amqpexample"]
         args: ["-mode", "consumer"]
-        image: quay.io/xphyr/amqpexample:latest
+        image: quay.io/xphyr/amqpexample:amqp10
         imagePullPolicy: Always
         dnsPolicy: ClusterFirst
         restartPolicy: Always

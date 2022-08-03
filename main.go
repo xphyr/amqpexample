@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
-	"os"
-
-	"github.com/jamiealquiza/envy"
-	"github.com/streadway/amqp"
-
 	"fmt"
+	"log"
+	"os"
 	"time"
+
+	amqp "github.com/Azure/go-amqp"
+	"github.com/jamiealquiza/envy"
 )
 
 var (
@@ -22,23 +23,24 @@ func main() {
 	envy.Parse("AMQP") // looks for AMQP_SERVER, AMQP_MODE, AMQP_DEBUG etc
 	flag.Parse()
 
-	connection, _ := amqp.Dial(*amqpURI)
-	defer connection.Close()
+	// Create client
+	client, err := amqp.Dial(*amqpURI)
+	if err != nil {
+		log.Fatal("Dialing AMQP server:", err)
+	}
+	defer client.Close()
 
-	channel, _ := connection.Channel()
-	defer channel.Close()
-	durable, exclusive := false, false
-	autoDelete, noWait := false, true
-	q, _ := channel.QueueDeclare("test", durable, autoDelete, exclusive, noWait, nil)
-	channel.QueueBind(q.Name, "#", "amq.topic", false, nil)
-	// set the prefetch to 1, so that we build up a queue
-	channel.Qos(1, 0, false)
+	// Open a session
+	session, err := client.NewSession()
+	if err != nil {
+		log.Fatal("Creating AMQP session:", err)
+	}
 
 	switch *mode {
 	case "publisher":
-		go publish(channel, &q)
+		go publish(session)
 	case "consumer":
-		go subscribe(channel, &q)
+		go subscribe(session)
 	default:
 		fmt.Println("must specify mode to work")
 		os.Exit(1)
@@ -47,30 +49,59 @@ func main() {
 	select {}
 }
 
-func publish(channel *amqp.Channel, q *amqp.Queue) {
+func publish(session *amqp.Session) {
+
+	ctx := context.Background()
+	i := 0
+
+	// Create a sender
+	sender, err := session.NewSender(
+		amqp.LinkTargetAddress("keda-test"),
+	)
+	if err != nil {
+		log.Fatal("Creating sender link:", err)
+	}
+
 	timer := time.NewTicker(3 * time.Second)
 
 	for t := range timer.C {
-		msg := amqp.Publishing{
-			DeliveryMode: 1,
-			Timestamp:    t,
-			ContentType:  "text/plain",
-			Body:         []byte("Hello world"),
+		myMessage := "Hello " + t.String()
+		err = sender.Send(ctx, amqp.NewMessage([]byte(myMessage)))
+		if err != nil {
+			log.Fatal("Sending message:", err)
 		}
-		mandatory, immediate := false, false
-		channel.Publish("amq.topic", "ping", mandatory, immediate, msg)
-		fmt.Println("pushed data")
+		i = i + 1
 	}
+	sender.Close(ctx)
 }
 
-func subscribe(channel *amqp.Channel, q *amqp.Queue) {
-	autoAck, exclusive, noLocal, noWait := false, false, false, false
-	messages, _ := channel.Consume(q.Name, "", autoAck, exclusive, noLocal, noWait, nil)
-	multiAck := false
-	for msg := range messages {
-		fmt.Println("Body:", string(msg.Body), "Timestamp:", msg.Timestamp)
-		fmt.Println("Doing  work for 10 seconds")
-		time.Sleep(10 * time.Second)
-		msg.Ack(multiAck)
+func subscribe(session *amqp.Session) {
+	ctx := context.Background()
+	// Create a receiver
+	receiver, err := session.NewReceiver(
+		amqp.LinkSourceAddress("keda-test"),
+		amqp.LinkCredit(10),
+	)
+	if err != nil {
+		log.Fatal("Creating receiver link:", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+		receiver.Close(ctx)
+		cancel()
+	}()
+
+	for {
+		// Receive next message
+		msg, err := receiver.Receive(ctx)
+		if err != nil {
+			log.Fatal("Reading message from AMQP:", err)
+		}
+
+		// Accept message
+		receiver.AcceptMessage(ctx, msg)
+
+		fmt.Printf("Message received: %s\n", msg.GetData())
+		time.Sleep(5 * time.Second)
 	}
 }

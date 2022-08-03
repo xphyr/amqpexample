@@ -1,0 +1,29 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: trigger-auth-activemq
+spec:
+  secretTargetRef:
+  - parameter: username
+    name: activemq-secret
+    key: activemq-username
+  - parameter: password
+    name: activemq-secret
+    key: activemq-password
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: activemq-scaledobject
+spec:
+  scaleTargetRef:
+    name: amqpexample-consumer
+  triggers:
+  - type: activemq
+    metadata:
+      managementEndpoint: "pobox.xphyrlab.net:8161"
+      destinationName: "keda-test"
+      brokerName: "localhost"
+      targetQueueSize: "10"
+    authenticationRef:
+      name: trigger-auth-activemq
