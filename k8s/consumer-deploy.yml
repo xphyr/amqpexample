@@ -18,10 +18,17 @@ spec:
       - name: amqpexample-consumer
         env:
           - name: AMQP_SERVER
+            value: "artemis-amqp-acceptor-0-svc:5672"
+          - name: AMQP_USERNAME
             valueFrom:
               secretKeyRef:
-                name: amqpuri
-                key: URI
+                name: artemis-credentials-secret
+                key: AMQ_USER
+          - name: AMQP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: artemis-credentials-secret
+                key: AMQ_PASSWORD
         command: ["/usr/bin/amqpexample"]
         args: ["-mode", "consumer"]
         image: quay.io/xphyr/amqpexample:amqp10

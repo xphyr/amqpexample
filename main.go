@@ -13,9 +13,11 @@ import (
 )
 
 var (
-	amqpURI    = flag.String("server", "amqp://guest:guest@pobox.xphyrlab.net", "server address and port")
-	mode       = flag.String("mode", "publisher", "act as publisher or consumer")
-	debugLevel = flag.Bool("debug", false, "enable debug messages")
+	amqpUserName = flag.String("username", "guest", "username to connect as")
+	amqpPassword = flag.String("password", "guest", "password")
+	amqpServer   = flag.String("server", "localhost:5672", "server address and port")
+	mode         = flag.String("mode", "publisher", "act as publisher or consumer")
+	debugLevel   = flag.Bool("debug", false, "enable debug messages")
 )
 
 func main() {
@@ -23,8 +25,10 @@ func main() {
 	envy.Parse("AMQP") // looks for AMQP_SERVER, AMQP_MODE, AMQP_DEBUG etc
 	flag.Parse()
 
+	amqpURI := "amqp://" + *amqpUserName + ":" + *amqpPassword + "@" + *amqpServer
 	// Create client
-	client, err := amqp.Dial(*amqpURI)
+	fmt.Printf("Connecting to server: %s\n", amqpURI)
+	client, err := amqp.Dial(amqpURI)
 	if err != nil {
 		log.Fatal("Dialing AMQP server:", err)
 	}

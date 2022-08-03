@@ -1,0 +1,23 @@
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+  creationTimestamp: '2022-08-03T15:49:41Z'
+  generation: 1
+  name: artemis
+  namespace: kedatest
+spec:
+  acceptors:
+    - name: amqp-acceptor
+      port: 5672
+      protocols: all
+  console:
+    expose: true
+  deploymentPlan:
+    image: placeholder
+    jolokiaAgentEnabled: true
+    journalType: nio
+    managementRBACEnabled: true
+    messageMigration: false
+    persistenceEnabled: false
+    requireLogin: false
+    size: 1

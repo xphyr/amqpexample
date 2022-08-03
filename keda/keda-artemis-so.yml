@@ -5,11 +5,11 @@ metadata:
 spec:
   secretTargetRef:
     - parameter: username
-      name: kedartemis
-      key: artemis-username
+      name: artemis-credentials-secret
+      key: AMQ_CLUSTER_USER
     - parameter: password
-      name: kedartemis
-      key: artemis-password
+      name: artemis-credentials-secret
+      key: AMQ_CLUSTER_PASSWORD
 ---
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
@@ -21,10 +21,10 @@ spec:
   triggers:
     - type: artemis-queue
       metadata:
-        managementEndpoint: "pobox.xphyrlab.net:8161"
+        managementEndpoint: "artemis-wconsj-0-svc.kedatest.svc.cluster.local:8161"
         queueName: "keda-test"
         queueLength: "10"
-        brokerName: "0.0.0.0"
+        brokerName: "amq-broker"
         brokerAddress: "keda-test"
         #restApiTemplate: # Optional. Default: "http://<<managementEndpoint>>/console/jolokia/read/org.apache.activemq.artemis:broker=\"<<brokerName>>\",component=addresses,address=\"<<brokerAddress>>\",subcomponent=queues,routing-type=\"anycast\",queue=\"<<queueName>>\"/MessageCount"
       authenticationRef:
