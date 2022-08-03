@@ -30,4 +30,4 @@ $ podman push amqexample:latest <container registry>/amqexample:latest
 
 ## Deploying the Application
 
-The single Image can be used as both the application that creates and fills the AMQP queue and the application that removes the entries from the queue.
+The single Image can be used as both the application that creates and fills the AMQP queue and the application that removes the entries from the queue. Sample YAML is included in the `k8s` directory to deploy a pre-compiled application from the Quay registry. 
